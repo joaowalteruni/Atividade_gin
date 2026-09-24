@@ -163,6 +163,27 @@ func matricularAluno(c *gin.Context) {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"erro": "Capacidade da sala excedida"})
 			return
 		}
+
+		for _, t := range dbTurmas {
+			if t.ID != turmaID && t.Alocacao != nil {
+				matriculadoOutraTurma := false
+				for _, id := range t.AlunosIDs {
+					if id == req.AlunoID {
+						matriculadoOutraTurma = true
+						break
+					}
+				}
+
+				if matriculadoOutraTurma {
+					if turma.Alocacao.DiaDaSemana == t.Alocacao.DiaDaSemana {
+						if turma.Alocacao.HorarioInicio < t.Alocacao.HorarioFim && turma.Alocacao.HorarioFim > t.Alocacao.HorarioInicio {
+							c.JSON(http.StatusConflict, gin.H{"erro": "Conflito de agenda do aluno"})
+							return
+						}
+					}
+				}
+			}
+		}
 	}
 
 	turma.AlunosIDs = append(turma.AlunosIDs, req.AlunoID)
